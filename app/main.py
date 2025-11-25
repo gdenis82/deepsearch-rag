@@ -15,6 +15,6 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 async def health():
     return {
         "status": "ok",
-        "service": "smarttask-faq",
+        "service": "smart-task-faq",
         "timestamp": __import__("datetime").datetime.utcnow().isoformat()
     }
