@@ -12,7 +12,7 @@ load_dotenv(find_dotenv())
 
 class Settings(BaseSettings):
     ENVIRONMENT: str
-
+    PROJECT_NAME: str = "SmartTask FAQ"
     API_V1_STR: str = "/api/v1"
 
     # Security settings
