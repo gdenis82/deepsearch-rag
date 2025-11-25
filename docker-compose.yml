@@ -44,6 +44,8 @@ services:
     image: redis:7-alpine
     networks:
       - smart-task-network
+    ports:
+      - "6379:6379"
 
   adminer:
     container_name: adminer-faq
