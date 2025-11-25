@@ -1,10 +1,13 @@
+import logging
+
 import redis
 import json
 import hashlib
-import os
 from typing import Optional, Dict, Any
 
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 redis_client = redis.Redis(
     host=settings.REDIS_HOST,
@@ -22,11 +25,11 @@ def get_cache(key: str) -> Optional[Dict[str, Any]]:
         cached = redis_client.get(key)
         return json.loads(cached) if cached else None
     except Exception as e:
-        print(f"⚠️ Redis get failed: {e}")
+        logger.error(f"Redis get failed: {e}")
         return None
 
 def set_cache(key: str, value: Dict[str, Any], ttl: int = 3600):
     try:
         redis_client.setex(key, ttl, json.dumps(value, ensure_ascii=False))
     except Exception as e:
-        print(f"⚠️ Redis set failed: {e}")
+        logger.error(f"Redis set failed: {e}")
