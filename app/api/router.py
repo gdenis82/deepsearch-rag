@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
-from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -9,7 +8,6 @@ from app.db.session import get_db
 from app.models.query_logs import QueryLog
 from app.rag import retrieve_context, generate_answer, ingest_documents
 from app.schemas.schemas import QuestionRequest
-
 from app.utils import logger, Timer
 
 api_router = APIRouter()
@@ -97,7 +95,7 @@ async def upload_documents(files: list[UploadFile] = File(...)):
     if not files:
         raise HTTPException(status_code=400, detail="Нет файлов для загрузки")
 
-    # Сохранение загруженных файлов во временную директорию документов
+    # Сохранение загруженных файлов в директорию документов
     for f in files:
         filename = os.path.basename(f.filename)
         if not filename:
