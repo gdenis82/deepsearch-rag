@@ -65,7 +65,7 @@ class Settings(BaseSettings):
         )
         prompt_path = os.getenv("ANSWER_PROMPT_PATH", "")
         if os.path.isfile(prompt_path):
-            with open(os.getenv("ANSWER_PROMPT_PATH"), encoding="utf-8") as f:
+            with open(prompt_path, encoding="utf-8") as f:
                 self.ANSWER_PROMPT = f.read()
 
 
