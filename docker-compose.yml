@@ -31,8 +31,6 @@ services:
       - ./data/chroma:/data
     networks:
       - smart-task-network
-    ports:
-      - "8001:8000"
 
   db:
     container_name: postgres-faq
