@@ -1,5 +1,5 @@
 FROM python:3.11-slim
-
+MAINTAINER Denis Gaev
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y \
@@ -20,5 +20,3 @@ RUN chmod +x ./entrypoint.sh
 ENTRYPOINT ["./entrypoint.sh"]
 
 CMD ["gunicorn", "-c", "gunicorn.conf.py", "app.main:app"]
-
-#CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
