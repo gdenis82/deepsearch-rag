@@ -76,7 +76,7 @@
    docker-compose up 
    ```
 6. Откройте веб-интерфейс в браузере по адресу: `http://localhost:8000`
-7. База данных запросов доступна через веб-интерфейс adminer по адресу: `http://localhost:8089
+7. База данных запросов доступна через веб-интерфейс adminer по адресу: `http://localhost:8089`
 8. Выполнить тесты
     ```bash
     docker-compose run --rm backend pytest -v tests/
