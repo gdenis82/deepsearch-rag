@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartTask FAQ</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; }
+        h1 { color: #2c3e50; }
+        input, button { padding: 12px; font-size: 16px; margin: 10px 0; }
+        input { width: 70%; }
+        button { background: #3498db; color: white; border: none; cursor: pointer; }
+        button:hover { background: #2980b9; }
+        #result { margin-top: 20px; padding: 15px; border-left: 4px solid #3498db; background: #f8f9fa; }
+        .sources { margin-top: 10px; }
+        .meta { font-size: 0.85em; color: #7f8c8d; }
+    </style>
+</head>
+<body>
+    <h1>💬 Умный FAQ для SmartTask</h1>
+    <p>Задайте вопрос по документации — и получите точный ответ с указанием источника.</p>
+
+    <input type="text" id="question" placeholder="Например: Как сбросить пароль?" autofocus>
+    <button onclick="ask()">Отправить</button>
+
+    <div id="result" style="display:none;"></div>
+
+    <script>
+        async function ask() {
+            const input = document.getElementById("question");
+            const question = input.value.trim();
+            if (!question) return;
+
+            const resultDiv = document.getElementById("result");
+            resultDiv.style.display = "block";
+            resultDiv.innerHTML = "<em>Думаю...</em>";
+
+            try {
+                const res = await fetch("/api/v1/ask", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ question })
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(data.detail || "Ошибка сервера");
+                }
+
+                const sourcesHtml = data.sources.length
+                    ? `<h4>📚 Источники:</h4><ul>${data.sources.map(s => `<li>${s}</li>`).join('')}</ul>`
+                    : "";
+
+                resultDiv.innerHTML = `
+                    <h3>Ответ:</h3>
+                    <p>${data.answer.replace(/\n/g, '<br>')}</p>
+                    ${sourcesHtml}
+                    <div class="meta">
+                        ⏱️ ${data.response_time_ms} мс |
+                        📏 in: ${data.tokens.input}, out: ${data.tokens.output} токенов
+                    </div>
+                `;
+            } catch (e) {
+                resultDiv.innerHTML = `<p style="color:red">❌ ${e.message}</p>`;
+            }
+        }
+
+        // Enter → submit
+        document.getElementById("question").addEventListener("keypress", function(e) {
+            if (e.key === "Enter") ask();
+        });
+    </script>
+</body>
+</html>
