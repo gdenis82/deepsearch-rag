@@ -48,9 +48,6 @@
    git clone https://github.com/yourname/smart-faq.git
    cd smart-faq
    ```
-   - Директория `data/documents` содержит 5 официальных PDF файла (Overview, User Manual, Troubleshooting, Security, API) 
-   для загрузки в векторную базу ChromaDB.
-   - Из файла `prompts/answer_prompt.txt` используется промпт для генерации ответов.
    
 3. Установите переменные окружения в файле `.env`:
     - Скопируйте пример файла окружения:
