@@ -1,18 +1,15 @@
 import os
 import chromadb
+import openai
+
 from typing import List, Dict, Tuple, Optional
 
-from anthropic.types import MessageParam
 from chromadb.utils.embedding_functions import (openai_embedding_function,
                                                 sentence_transformer_embedding_function)
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-import anthropic
-import openai
-from openai.types.chat import ChatCompletionMessageParam
-
 from app.core.config import settings
-from app.utils import extract_text_from_pdf, logging, extract_text_from_path
+from app.utils import logging, extract_text_from_path
 
 COLLECTION_NAME = "smarttask_docs"
 
@@ -27,9 +24,10 @@ if settings.OPENAI_API_KEY and settings.OPENAI_API_KEY.strip():
 
     )
 else:
-    embedding_fn = sentence_transformer_embedding_function.SentenceTransformerEmbeddingFunction(
-        model_name="all-MiniLM-L6-v2"
-    )
+    # embedding_fn = sentence_transformer_embedding_function.SentenceTransformerEmbeddingFunction(
+    #     model_name="all-MiniLM-L6-v2"
+    # )
+    raise ValueError("OPENAI_API_KEY не задан в настройках.")
 
 collection = client.get_or_create_collection(
     name=COLLECTION_NAME,
@@ -46,9 +44,6 @@ def chunk_text(text: str, source_name: str) -> List[Dict]:
     )
     chunks = splitter.split_text(text)
     return [{"text": chunk, "source": source_name} for chunk in chunks]
-
-
-
 
 def ingest_documents(doc_dir: str = None, file_paths: Optional[List[str]] = None, force: bool = False) -> Tuple[int, int, List[str]]:
     """Добавление документов в Chroma.
@@ -148,35 +143,15 @@ def generate_answer(question: str, context_list: List[Dict[str, str]]) -> Tuple[
     
     Ответ:"""
 
-    if settings.ANTHROPIC_API_KEY and settings.ANTHROPIC_API_KEY.strip():
-        llm_client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
-        try:
-            messages: list[MessageParam] = [{"role": "system", "content": settings.ANSWER_PROMPT},
-                                            {"role": "user", "content": prompt}]
-            model = "claude-3-5-sonnet-20241022"
-            response = llm_client.messages.create(
-                model=model,
-                messages=messages,
-                max_tokens=1024,
-                temperature=0.0,
-            )
-            answer = response.content[0].text
-
-            input_tokens = response.usage.input_tokens
-            output_tokens = response.usage.output_tokens
-        except Exception as e:
-            raise RuntimeError(f"Anthropic error: {e}")
-    elif settings.OPENAI_API_KEY and settings.OPENAI_API_KEY.strip():
+    if settings.OPENAI_API_KEY and settings.OPENAI_API_KEY.strip():
         llm_client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
         try:
-
             response = llm_client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
                 {"role": "system", "content": settings.ANSWER_PROMPT},
                 {"role": "user", "content": prompt},
-
-            ],
+                ],
                 max_tokens=1024,
                 temperature=0.0,
             )
@@ -186,6 +161,6 @@ def generate_answer(question: str, context_list: List[Dict[str, str]]) -> Tuple[
         except Exception as e:
             raise RuntimeError(f"OpenAI error: {e}")
     else:
-        raise ValueError("Ни ANTHROPIC_API_KEY, ни OPENAI_API_KEY не заданы")
+        raise ValueError("OPENAI_API_KEY не задан в настройках.")
 
     return answer, sources, input_tokens, output_tokens
