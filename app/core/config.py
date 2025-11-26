@@ -63,9 +63,10 @@ class Settings(BaseSettings):
             f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
             f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
         )
-
-        with open(os.getenv("ANSWER_PROMPT_PATH"), encoding="utf-8") as f:
-            self.ANSWER_PROMPT = f.read()
+        prompt_path = os.getenv("ANSWER_PROMPT_PATH", "")
+        if os.path.isfile(prompt_path):
+            with open(os.getenv("ANSWER_PROMPT_PATH"), encoding="utf-8") as f:
+                self.ANSWER_PROMPT = f.read()
 
 
 
