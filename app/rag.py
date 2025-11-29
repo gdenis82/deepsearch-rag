@@ -1,7 +1,7 @@
 import os
 import chromadb
 import openai
-
+import uuid
 from typing import List, Dict, Tuple, Optional
 
 from chromadb.utils.embedding_functions import (openai_embedding_function,
@@ -27,7 +27,7 @@ if settings.OPENAI_API_KEY and settings.OPENAI_API_KEY.strip():
         model_name=settings.EMBEDDING_MODEL,
 
     )
-    llm_client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
+    llm_client = openai.AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
 else:
     # embedding_fn = sentence_transformer_embedding_function.SentenceTransformerEmbeddingFunction(
     #     model_name="all-MiniLM-L6-v2"
@@ -61,7 +61,7 @@ async def ingest_documents(doc_dir: str = None, file_paths: Optional[List[str]] 
       - force: игнорировать проверку пустоты коллекции (при загрузке через API).
 
     Возвращает:
-      - кортеж: (кол-во добавленных чанков, кол-во обработанных документов, список имён файлов)
+      - tuple: (кол-во добавленных чанков, кол-во обработанных документов, список имён файлов)
     """
     # Поведение: на старте, если коллекция не пуста - пропускаем
     if not force and not file_paths and collection.count() > 0:
@@ -90,7 +90,7 @@ async def ingest_documents(doc_dir: str = None, file_paths: Optional[List[str]] 
             if os.path.splitext(filename)[1].lower() not in supported_ext:
                 continue
             logging.debug(f"Обработка: {filename}")
-            text = await extract_text_from_path(path)
+            text = extract_text_from_path(path)
             if not text:
                 logging.debug(f"Пустой документ: {filename}")
                 continue
@@ -111,7 +111,7 @@ async def ingest_documents(doc_dir: str = None, file_paths: Optional[List[str]] 
     texts = [c["text"] for c in all_chunks]
     metadatas = [{"source": c["source"]} for c in all_chunks]
     # Уникальные id, чтобы избежать конфликтов при повторных загрузках
-    import uuid
+
     ids = [f"id_{uuid.uuid4()}" for _ in range(len(texts))]
 
     collection.add(
@@ -153,7 +153,7 @@ async def generate_answer(question: str, context_list: List[Dict[str, str]]) -> 
     Ответ:"""
 
     try:
-        response = llm_client.chat.completions.create(
+        response = await llm_client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": settings.ANSWER_PROMPT},
