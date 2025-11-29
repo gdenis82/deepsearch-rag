@@ -2,10 +2,12 @@ import os
 import chromadb
 import openai
 import uuid
-from typing import List, Dict, Tuple, Optional
+from typing import List, Dict, Tuple, Optional, Any
 
-from chromadb.utils.embedding_functions import (openai_embedding_function,
-                                                sentence_transformer_embedding_function)
+from chromadb.utils.embedding_functions import (
+    openai_embedding_function,
+    sentence_transformer_embedding_function,
+)
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from app.core.config import settings
@@ -13,19 +15,12 @@ from app.utils import logging, extract_text_from_path
 
 COLLECTION_NAME = "smarttask_docs"
 
-# Инициализация Chroma
-if settings.CHROMA_HOST:
-    chroma_client = chromadb.HttpClient(host=settings.CHROMA_HOST, port=settings.CHROMA_PORT)
-else:
-    chroma_client = chromadb.PersistentClient(path=settings.CHROMA_PATH)
-
 # Embedding function
 if settings.OPENAI_API_KEY and settings.OPENAI_API_KEY.strip():
     # Use environment variable binding to avoid ChromaDB deprecation warning
     embedding_fn = openai_embedding_function.OpenAIEmbeddingFunction(
         api_key_env_var="OPENAI_API_KEY",
         model_name=settings.EMBEDDING_MODEL,
-
     )
     llm_client = openai.AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
 else:
@@ -34,14 +29,56 @@ else:
     # )
     raise ValueError("OPENAI_API_KEY не задан в настройках.")
 
-collection = chroma_client.get_or_create_collection(
-    name=COLLECTION_NAME,
-    embedding_function=embedding_fn,
-    metadata={"hnsw:space": "cosine"}
-)
+class ChromaManager:
+    """Класс-менеджер для работы с ChromaDB через AsyncHttpClient.
+
+    Инкапсулирует ленивую инициализацию клиента/коллекции и
+    предоставляет асинхронные методы для базовых операций.
+    """
+
+    def __init__(self) -> None:
+        self._client: Optional[Any] = None
+        self._collection: Optional[Any] = None
+
+    async def get_collection(self) -> Any:
+        """Ленивая инициализация и возврат коллекции Chroma."""
+        if self._collection is not None:
+            return self._collection
+
+        try:
+            # асинхронный HTTP-клиент удалённого Chroma
+            self._client = await chromadb.AsyncHttpClient(
+                host=settings.CHROMA_HOST,
+                port=int(settings.CHROMA_PORT),
+            )
+            self._collection = await self._client.get_or_create_collection(
+                name=COLLECTION_NAME,
+                embedding_function=embedding_fn,
+                metadata={"hnsw:space": "cosine"},
+            )
+        except Exception as e:
+            logging.error(f"Не удалось инициализировать ChromaDB: {e}")
+            raise
+
+        return self._collection
+
+    async def count(self) -> int:
+        coll = await self.get_collection()
+        return await coll.count()
+
+    async def add(self, *, documents: List[str], metadatas: List[Dict], ids: List[str]) -> None:
+        coll = await self.get_collection()
+        await coll.add(documents=documents, metadatas=metadatas, ids=ids)
+
+    async def query(self, *, query_texts: List[str], n_results: int) -> Dict:
+        coll = await self.get_collection()
+        return await coll.query(query_texts=query_texts, n_results=n_results)
 
 
-async def chunk_text(text: str, source_name: str) -> List[Dict]:
+_chroma_manager = ChromaManager()
+
+
+def chunk_text(text: str, source_name: str) -> List[Dict]:
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=500,
         chunk_overlap=50,
@@ -64,9 +101,14 @@ async def ingest_documents(doc_dir: str = None, file_paths: Optional[List[str]] 
       - tuple: (кол-во добавленных чанков, кол-во обработанных документов, список имён файлов)
     """
     # Поведение: на старте, если коллекция не пуста - пропускаем
-    if not force and not file_paths and collection.count() > 0:
-        logging.debug("ChromaDB уже содержит документы — пропускаем.")
-        return 0, 0, []
+    # Проверка: если коллекция не пуста — пропускаем (если не force и не явные файлы)
+    if not force and not file_paths:
+        try:
+            if await _chroma_manager.count() > 0:
+                logging.debug("ChromaDB уже содержит документы — пропускаем.")
+                return 0, 0, []
+        except Exception as e:
+            logging.error(f"Не удалось получить количество документов Chroma: {e}")
 
     logging.debug("Запуск обработки документов...")
     all_chunks: List[Dict] = []
@@ -94,7 +136,7 @@ async def ingest_documents(doc_dir: str = None, file_paths: Optional[List[str]] 
             if not text:
                 logging.debug(f"Пустой документ: {filename}")
                 continue
-            chunks = await chunk_text(text, filename)
+            chunks = chunk_text(text, filename)
             if not chunks:
                 logging.debug(f"Нет чанков после разбиения: {filename}")
                 continue
@@ -110,24 +152,17 @@ async def ingest_documents(doc_dir: str = None, file_paths: Optional[List[str]] 
 
     texts = [c["text"] for c in all_chunks]
     metadatas = [{"source": c["source"]} for c in all_chunks]
-    # Уникальные id, чтобы избежать конфликтов при повторных загрузках
 
+    # Уникальные id, чтобы избежать конфликтов при повторных загрузках
     ids = [f"id_{uuid.uuid4()}" for _ in range(len(texts))]
 
-    collection.add(
-        documents=texts,
-        metadatas=metadatas,
-        ids=ids
-    )
+    await _chroma_manager.add(documents=texts, metadatas=metadatas, ids=ids)
     logging.debug(f"Добавлено {len(texts)} чанков из {len(set(sources))} документов.")
     return len(texts), len(set(processed_files)), processed_files
 
 
 async def retrieve_context(query: str, k: int = 3) -> List[Dict[str, str]]:
-    results = collection.query(
-        query_texts=[query],
-        n_results=k
-    )
+    results = await _chroma_manager.query(query_texts=[query], n_results=k)
     return [
         {
             "text": doc,
