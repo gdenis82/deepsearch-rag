@@ -76,7 +76,7 @@ class Settings(BaseSettings):
             self.CHROMA_PORT = 8001
 
         self.DATABASE_URL = (
-            f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
+            f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
             f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
         )
         prompt_path = os.getenv("ANSWER_PROMPT_PATH", "")

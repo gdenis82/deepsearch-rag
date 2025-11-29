@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy import text
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.cache import hash_query, get_cache, set_cache
 from app.core.config import settings
-from app.db.session import get_db
+from app.db.session import get_async_session
 from app.models.query_logs import QueryLog
 from app.rag import retrieve_context, generate_answer, ingest_documents
 from app.schemas.schemas import QuestionRequest
@@ -14,10 +14,10 @@ api_router = APIRouter()
 
 
 @api_router.get("/health")
-async def health(db: Session = Depends(get_db)):
+async def health(db: AsyncSession = Depends(get_async_session)):
     """Проверка состояния сервиса и базы данных."""
     try:
-        db.execute(text("SELECT 1"))
+        await db.execute(text("SELECT 1"))
         return {
             "status": "ok",
             "service": "smart-task-faq",
@@ -30,7 +30,7 @@ async def health(db: Session = Depends(get_db)):
 
 
 @api_router.post("/ask")
-async def ask_question(request: QuestionRequest, db: Session = Depends(get_db)):
+async def ask_question(request: QuestionRequest, db: AsyncSession = Depends(get_async_session)):
     """Обработка вопроса от пользователя с использованием RAG."""
     question = request.question.strip()
     if not question:
@@ -60,7 +60,7 @@ async def ask_question(request: QuestionRequest, db: Session = Depends(get_db)):
                 response_time_ms=int(timer.elapsed)
             )
             db.add(log_entry)
-            db.commit()
+            await db.commit()
 
             result = {
                 "answer": answer,
