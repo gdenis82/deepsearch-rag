@@ -19,7 +19,7 @@ services:
     volumes:
       - ./data:/app/data
     networks:
-      - smart-task-network
+      - deepsearch-network
 
   chroma:
     container_name: chroma-faq
@@ -30,7 +30,7 @@ services:
     volumes:
       - ./data/chroma:/data
     networks:
-      - smart-task-network
+      - deepsearch-network
     ports:
       - "8001:8000"
 
@@ -53,14 +53,14 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - smart-task-network
+      - deepsearch-network
 
   redis:
     container_name: redis-faq
     restart: unless-stopped
     image: redis:7-alpine
     networks:
-      - smart-task-network
+      - deepsearch-network
     ports:
       - "6379:6379"
 
@@ -69,7 +69,7 @@ services:
     image: adminer
     restart: unless-stopped
     networks:
-      - smart-task-network
+      - deepsearch-network
     depends_on:
       - db
     ports:
@@ -79,5 +79,5 @@ volumes:
   pgdata:
 
 networks:
-  smart-task-network:
+  deepsearch-network:
     external: true
