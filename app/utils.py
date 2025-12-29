@@ -3,6 +3,7 @@ import time
 import logging
 
 from pypdf import PdfReader
+from docx import Document
 
 from app.core.config import settings
 
@@ -28,11 +29,25 @@ def extract_text_from_pdf(pdf_path: str) -> str:
        reader.close()
     return text
 
+def extract_text_from_docx(docx_path: str) -> str:
+    """Извлекает текст из .docx файла."""
+    try:
+        doc = Document(docx_path)
+        full_text = []
+        for para in doc.paragraphs:
+            full_text.append(para.text)
+        return "\n".join(full_text)
+    except Exception as e:
+        logger.error(f"Ошибка при чтении docx {docx_path}: {e}")
+        return ""
+
 def extract_text_from_path(path: str) -> str:
-    """Извлекает текст из файла по расширению: pdf/txt/md."""
+    """Извлекает текст из файла по расширению: pdf/txt/md/docx."""
     ext = os.path.splitext(path)[1].lower()
     if ext == ".pdf":
         return extract_text_from_pdf(path)
+    elif ext == ".docx":
+        return extract_text_from_docx(path)
     elif ext in {".txt", ".md"}:
         try:
             with open(path, "r", encoding="utf-8") as f:
