@@ -13,7 +13,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from app.core.config import settings
 from app.utils import logging, extract_text_from_path
 
-COLLECTION_NAME = "smarttask_docs"
+COLLECTION_NAME = "deepsearch_docs"
 
 # Embedding function
 if settings.OPENAI_API_KEY and settings.OPENAI_API_KEY.strip():
@@ -203,6 +203,16 @@ async def retrieve_context(query: str, k: int = 3) -> List[Dict[str, str]]:
         }
         for doc, meta in zip(results["documents"][0], results["metadatas"][0])
     ]
+
+
+async def delete_document_from_rag(filename: str):
+    """Удаление документа из векторной базы."""
+    try:
+        await _chroma_manager.delete_by_source(filename)
+        logging.debug(f"Документ '{filename}' удален из ChromaDB.")
+    except Exception as e:
+        logging.error(f"Ошибка при удалении '{filename}' из ChromaDB: {e}")
+        raise e
 
 
 async def generate_answer(question: str, context_list: List[Dict[str, str]]) -> Tuple[str, List[str], int, int]:
