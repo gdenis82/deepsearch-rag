@@ -144,7 +144,7 @@ async def ingest_documents(doc_dir: str = None, file_paths: Optional[List[str]] 
             return 0, 0, []
         candidates = [os.path.join(doc_dir, f) for f in os.listdir(doc_dir)]
 
-    supported_ext = {".pdf", ".txt", ".md"}
+    supported_ext = {".pdf", ".txt", ".md", ".docx"}
     processed_files: List[str] = []
 
     for path in candidates:
