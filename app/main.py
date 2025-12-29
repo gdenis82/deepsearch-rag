@@ -16,7 +16,7 @@ async def lifespan(fast_app: FastAPI):
     yield
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    description="RAG-based FAQ service for SmartTask documentation",
+    description="RAG-based service for DeepSearch documentation",
     version="1.0",
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
     lifespan=lifespan,
@@ -33,6 +33,7 @@ app.add_middleware(
 
 # Apply static files mount
 app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/docs_files", StaticFiles(directory=settings.DOCUMENTS_PATH), name="docs_files")
 
 # Include the API router
 # Versioned API (v1)
