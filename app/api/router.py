@@ -8,7 +8,7 @@ from app.core.config import settings
 from app.db.session import get_async_session
 from app.models.query_logs import QueryLog
 from app.rag import retrieve_context, generate_answer, ingest_documents, delete_document_from_rag
-from app.schemas.schemas import QuestionRequest, PromptUpdate
+from app.schemas.common import QuestionRequest, PromptUpdate
 from app.utils import logger, Timer
 
 api_router = APIRouter()
