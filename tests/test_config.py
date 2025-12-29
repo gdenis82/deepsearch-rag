@@ -5,7 +5,7 @@ from app.core.config import settings
 
 def test_config_project_info():
     """Проверяет основные метаданные проекта."""
-    assert settings.PROJECT_NAME == "SmartTask FAQ"
+    assert settings.PROJECT_NAME == "DeepSearch"
     assert settings.API_V1_STR == "/api/v1"
 
 def test_config_paths_absolute():
