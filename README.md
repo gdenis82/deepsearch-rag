@@ -7,6 +7,7 @@
   ![Redis](https://img.shields.io/badge/Redis-DC382D?logo=redis&logoColor=white)
   ![OpenAI](https://img.shields.io/badge/OpenAI-412991?logo=openai&logoColor=white)
   ![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
+  ![License](https://img.shields.io/badge/license-MIT-green)
 
 
 Мини-сервис разработан для демонстрации применение RAG (Retrieval-Augmented Generation) для поиска ответов в документах.
@@ -129,6 +130,11 @@ DeepSearch/
 ├── gunicorn.conf.py                # Конфигурация Gunicorn сервера
 ├── pytest.ini                      # Конфигурация Pytest
 ├── README.md                       # Описание проекта, инструкции по установке и запуску
+├── LICENSE                         # Лицензия MIT
 └── requirements.txt                # Список зависимостей Python
 ```
+
+## 📄 Лицензия
+
+Данный проект распространяется под лицензией [MIT](LICENSE).
 
